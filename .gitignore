@@ -4,5 +4,4 @@
 *.so
 *.dll
 *.dylib
-*.sh
-*.bat
+*.exe
