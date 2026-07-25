@@ -49,9 +49,9 @@ LUA_O  := lapi.o     lcode.o    ldebug.o   ldo.o      ldump.o    lfunc.o  lgc.o 
 LUA_T  := $(addprefix $(VENDOR_LUA_PREFIX),$(LUA_T))
 LUA_O  := $(addprefix $(VENDOR_LUA_PREFIX),$(LUA_O))
 
-ALL_O  := $(LUA_O) $(EH_O)
+ALL_O  := $(EH_O) $(LUA_O)
 ALL_T  := $(EH_T) $(LUA_T)
-ALL    := $(ALL_O) $(ALL_T) $(EH_E)
+ALL    := $(EH_E) $(ALL_T) $(ALL_O)
 
 $(EH_E): $(ALL_T)
 	$(CC) $^ -o $@
