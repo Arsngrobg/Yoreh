@@ -19,6 +19,12 @@ EHLUA_CDEF(editor_setfont) {
     EHLUA_VOID_RETURN;
 }
 
+EHLUA_CDEF(terminal_setfont) {
+    const char *font_id = lua_tostring(L, -1);
+    printf("[EH (PHONY)] Set terminal font to %s\n", font_id);
+    EHLUA_VOID_RETURN;
+}
+
 EHLUA_CDEF(keybinds_undo) {
     const char *keybind = lua_tostring(L, -1);
     printf("[EH (PHONY)] Set undo keybind to \"%s\"\n", keybind);
@@ -28,6 +34,12 @@ EHLUA_CDEF(keybinds_undo) {
 EHLUA_CDEF(keybinds_redo) {
     const char *keybind = lua_tostring(L, -1);
     printf("[EH (PHONY)] Set redo keybind to \"%s\"\n", keybind);
+    EHLUA_VOID_RETURN;
+}
+
+EHLUA_CDEF(keybinds_showterm) {
+    const char *keybind = lua_tostring(L, -1);
+    printf("[EH (PHONY)] Set showterm keybind to \"%s\"\n", keybind);
     EHLUA_VOID_RETURN;
 }
 
@@ -49,9 +61,19 @@ int32_t main(void) {
             lua_pushcfunction(L, EHLUA_CFUN(editor_setfont));
             lua_settable(L, -3);
         lua_settable(L, -3);
+        // terminal functions
+        lua_pushstring(L, "terminal");
+        lua_newtable(L);
+            lua_pushstring(L, "setfont");
+            lua_pushcfunction(L, EHLUA_CFUN(terminal_setfont));
+            lua_settable(L, -3);
+        lua_settable(L, -3);
         // keybinds functions
         lua_pushstring(L, "keybinds");
         lua_newtable(L);
+            lua_pushstring(L, "showterm");
+            lua_pushcfunction(L, EHLUA_CFUN(keybinds_showterm));
+            lua_settable(L, -3);
             lua_pushstring(L, "undo");
             lua_pushcfunction(L, EHLUA_CFUN(keybinds_undo));
             lua_settable(L, -3);
