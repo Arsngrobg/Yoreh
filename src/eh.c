@@ -44,7 +44,7 @@ EHL_CDEF(keybinds_showterm) {
     EHL_VOID;
 }
 
-static int32_t ehL_initapi(lua_State *L) {
+static int32_t ehL_openapi(lua_State *L) {
     assert(L != NULL);
 
     // define table that acts as the namespace for the yoreh API functions
@@ -87,7 +87,7 @@ int32_t main(void) {
     printf("Yoreh-ditor!\n");
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
-    ehL_initapi(L);
+    ehL_openapi(L);
 
     if (luaL_dofile(L, EHLUA_INIT) == 0) {
         printf("[C] Executed "EHLUA_INIT"\n");
