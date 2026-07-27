@@ -8,7 +8,7 @@
 #    Yoreh makefile
 
 CC     ?= cc
-CFLAGS ?= -march=native -mno-avx512f -NDEBUG
+CFLAGS ?= -march=native -mno-avx512f -DNDEBUG
 
 # ============================================================================== #
 #                          DO NOT EDIT PAST THIS POINT                           #
