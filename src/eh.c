@@ -86,7 +86,8 @@ static int32_t ehL_openapi(lua_State *L) {
 int32_t main(void) {
     printf("Yoreh-ditor!\n");
     lua_State *L = luaL_newstate();
-    luaL_openlibs(L);
+    luaopen_base(L);
+    luaopen_math(L);
     ehL_openapi(L);
 
     if (luaL_dofile(L, EHLUA_INIT) == 0) {
