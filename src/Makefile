@@ -43,7 +43,7 @@ LUA_O  := lapi.o     lcode.o    ldebug.o   ldo.o      ldump.o    lfunc.o  lgc.o 
 		  ltable.o   ltm.o      lundump.o  lvm.o      lzio.o                        \
                                                                                     \
           lauxlib.o  lbaselib.o ldblib.o   liolib.o   lmathlib.o loslib.o ltablib.o \
-	      lstrlib.o loadlib.o linit.o
+	      lstrlib.o  loadlib.o  linit.o
 
 # fix vendored paths
 LUA_T  := $(addprefix $(VENDOR_LUA_PREFIX),$(LUA_T))
