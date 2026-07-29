@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
+#include "GLFW/glfw3.h"
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -98,5 +100,20 @@ int32_t main(void) {
     }
 
     lua_close(L);
-    return 0;
+
+    if (glfwInit() == GLFW_FALSE) {
+        printf("Unable to load GLFW");
+        return EXIT_FAILURE;
+    }
+
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    GLFWwindow* window = glfwCreateWindow(640, 480, "Yoreh-ditor", NULL, NULL);
+    while (!glfwWindowShouldClose(window)) {
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return EXIT_SUCCESS;
 }
