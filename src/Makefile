@@ -74,6 +74,14 @@ else
     endif
 endif
 
+# force build system to include every possible object file when 'clean' recipe is used
+ifneq ($(filter clean,$(MAKECMDGOALS)),)
+    BUILD_COCOA   := 1
+    BUILD_WIN32   := 1
+    BUILD_WAYLAND := 1
+    BUILD_X11     := 1
+endif
+
 ifeq ($(BUILD_COCOA),1)
     override \
     CFLAGS += -D_GLFW_COCOA
