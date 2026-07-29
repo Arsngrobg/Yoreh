@@ -18,35 +18,41 @@
 // example API functions for the editor
 EHL_CDEF(editor_setfont) {
     const char *font_id = lua_tostring(L, -1);
-    printf("[EH (PHONY)] Set editor font to %s\n", font_id);
+    printf("[EH:SANDBOX] Set editor font to %s\n", font_id);
     EHL_VOID;
 }
 
 EHL_CDEF(terminal_setfont) {
     const char *font_id = lua_tostring(L, -1);
-    printf("[EH (PHONY)] Set terminal font to %s\n", font_id);
+    printf("[EH:SANDBOX] Set terminal font to %s\n", font_id);
     EHL_VOID;
 }
 
 EHL_CDEF(keybinds_undo) {
     const char *keybind = lua_tostring(L, -1);
-    printf("[EH (PHONY)] Set undo keybind to \"%s\"\n", keybind);
+    printf("[EH:SANDBOX] Set undo keybind to \"%s\"\n", keybind);
     EHL_VOID;
 }
 
 EHL_CDEF(keybinds_redo) {
     const char *keybind = lua_tostring(L, -1);
-    printf("[EH (PHONY)] Set redo keybind to \"%s\"\n", keybind);
+    printf("[EH:SANDBOX] Set redo keybind to \"%s\"\n", keybind);
     EHL_VOID;
 }
 
 EHL_CDEF(keybinds_showterm) {
     const char *keybind = lua_tostring(L, -1);
-    printf("[EH (PHONY)] Set showterm keybind to \"%s\"\n", keybind);
+    printf("[EH:SANDBOX] Set showterm keybind to \"%s\"\n", keybind);
     EHL_VOID;
 }
 
-static int32_t ehL_openapi(lua_State *L) {
+
+// https://www.lua.org/manual/5.1/manual.html#3
+// https://www.codingwiththomas.com/blog/a-lua-c-api-cheat-sheet
+#define EHL_INIT "./config/init.lua"
+
+static
+int32_t ehL_openapi(lua_State *L) {
     assert(L != NULL);
 
     // define table that acts as the namespace for the yoreh API functions
@@ -81,23 +87,30 @@ static int32_t ehL_openapi(lua_State *L) {
     lua_setglobal(L, "yoreh");
 }
 
-// https://www.lua.org/manual/5.1/manual.html#3
-// https://www.codingwiththomas.com/blog/a-lua-c-api-cheat-sheet
-#define EHLUA_INIT "./config/init.lua"
-
-int32_t main(void) {
-    printf("Yoreh-ditor!\n");
+static
+lua_State *ehL_init(void) {
     lua_State *L = luaL_newstate();
+    if (L == NULL) {
+        fprintf(stderr, "[EH] Unable to initialize Lua context");
+        return NULL;
+    }
+
     luaopen_base(L);
     luaopen_math(L);
     ehL_openapi(L);
 
-    if (luaL_dofile(L, EHLUA_INIT) == 0) {
-        printf("[C] Executed "EHLUA_INIT"\n");
+    if (luaL_dofile(L, EHL_INIT) == 0) {
+        printf("[EH] Executed "EHL_INIT"\n");
     } else {
-        printf("[C] Error reading script\n");
         luaL_error(L, "Error: %s", lua_tostring(L, -1));
     }
+
+    return L;
+}
+
+int32_t main(void) {
+    printf("Yoreh-ditor!\n");
+    lua_State *L = ehL_init();
 
     lua_close(L);
 
@@ -107,10 +120,12 @@ int32_t main(void) {
     }
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_POSITION_X, (1920-640)/2);
+    glfwWindowHint(GLFW_POSITION_Y, (1080-480)/2);
     GLFWwindow* window = glfwCreateWindow(640, 480, "Yoreh-ditor", NULL, NULL);
     while (!glfwWindowShouldClose(window)) {
+        glfwWaitEvents();
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     glfwDestroyWindow(window);
