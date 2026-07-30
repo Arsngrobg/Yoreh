@@ -46,7 +46,6 @@ EHL_CDEF(keybinds_showterm) {
     EHL_VOID;
 }
 
-
 // https://www.lua.org/manual/5.1/manual.html#3
 // https://www.codingwiththomas.com/blog/a-lua-c-api-cheat-sheet
 #define EHL_INIT "./config/init.lua"
@@ -84,7 +83,7 @@ int32_t ehL_openapi(lua_State *L) {
             lua_pushcfunction(L, EHL_CFUN(keybinds_redo));
             lua_settable(L, -3);
         lua_settable(L, -3);
-    lua_setglobal(L, "yoreh");
+    lua_setglobal(L, "eh");
 }
 
 static
