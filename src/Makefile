@@ -13,7 +13,7 @@ BUILD_WAYLAND ?= 0
 BUILD_X11     ?= 0
 
 CC     ?= cc
-CFLAGS ?= -march=native -mno-avx512f -DNDEBUG
+CFLAGS ?= -march=native -DNDEBUG
 
 # ============================================================================== #
 #                          DO NOT EDIT PAST THIS POINT                           #
