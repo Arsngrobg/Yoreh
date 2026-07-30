@@ -18,31 +18,31 @@
 // example API functions for the editor
 EHL_CDEF(editor_setfont) {
     const char *font_id = lua_tostring(L, -1);
-    printf("[EH:SANDBOX] Set editor font to %s\n", font_id);
+    printf("[EH:CONFIG] Set editor font to %s\n", font_id);
     EHL_VOID;
 }
 
 EHL_CDEF(terminal_setfont) {
     const char *font_id = lua_tostring(L, -1);
-    printf("[EH:SANDBOX] Set terminal font to %s\n", font_id);
+    printf("[EH:CONFIG] Set terminal font to %s\n", font_id);
     EHL_VOID;
 }
 
 EHL_CDEF(keybinds_undo) {
     const char *keybind = lua_tostring(L, -1);
-    printf("[EH:SANDBOX] Set undo keybind to \"%s\"\n", keybind);
+    printf("[EH:CONFIG] Set undo keybind to \"%s\"\n", keybind);
     EHL_VOID;
 }
 
 EHL_CDEF(keybinds_redo) {
     const char *keybind = lua_tostring(L, -1);
-    printf("[EH:SANDBOX] Set redo keybind to \"%s\"\n", keybind);
+    printf("[EH:CONFIG] Set redo keybind to \"%s\"\n", keybind);
     EHL_VOID;
 }
 
 EHL_CDEF(keybinds_showterm) {
     const char *keybind = lua_tostring(L, -1);
-    printf("[EH:SANDBOX] Set showterm keybind to \"%s\"\n", keybind);
+    printf("[EH:CONFIG] Set showterm keybind to \"%s\"\n", keybind);
     EHL_VOID;
 }
 
@@ -108,14 +108,19 @@ lua_State *ehL_init(void) {
     return L;
 }
 
+static
+void eh_GLFWerrorfun(int32_t error_code, const char *description) {
+    printf("Eh-rror: %s (exit code: 0x%x)\n", description, error_code);
+}
+
 int32_t main(void) {
     printf("Yoreh-ditor!\n");
     lua_State *L = ehL_init();
 
     lua_close(L);
 
+    glfwSetErrorCallback(&eh_GLFWerrorfun);
     if (glfwInit() == GLFW_FALSE) {
-        printf("Unable to load GLFW");
         return EXIT_FAILURE;
     }
 
@@ -124,7 +129,7 @@ int32_t main(void) {
     glfwWindowHint(GLFW_POSITION_Y, (1080-480)/2);
     GLFWwindow* window = glfwCreateWindow(640, 480, "Yoreh-ditor", NULL, NULL);
     while (!glfwWindowShouldClose(window)) {
-        glfwWaitEvents();
+        glfwWaitEvents(); // glfwPollEvents();
         glfwSwapBuffers(window);
     }
 
