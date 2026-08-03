@@ -38,16 +38,20 @@ CFLAGS += -std=c99 -O2
 
 # vendor pathing
 VENDOR_LUA_PREFIX      := ../vendor/lua/
+VENDOR_GLAD_SRC_PREFIX := ../vendor/glad/src/
+VENDOR_GLAD_INC_PREFIX := ../vendor/glad/include/
 VENDOR_GLFW_SRC_PREFIX := ../vendor/glfw/src/
 VENDOR_GLFW_INC_PREFIX := ../vendor/glfw/include/
 ifeq ($(OS),Windows)
     VENDOR_LUA_PREFIX      := $(subst /,\,$(VENDOR_LUA_PREFIX))
+    VENDOR_GLAD_SRC_PREFIX := $(subst /,\,$(VENDOR_GLAD_SRC_PREFIX))
+    VENDOR_GLAD_INC_PREFIX := $(subst /,\,$(VENDOR_GLAD_INC_PREFIX))
     VENDOR_GLFW_SRC_PREFIX := $(subst /,\,$(VENDOR_GLFW_SRC_PREFIX))
     VENDOR_GLFW_INC_PREFIX := $(subst /,\,$(VENDOR_GLFW_INC_PREFIX))
 endif
 
 override \
-CFLAGS += -I$(VENDOR_LUA_PREFIX) -I$(VENDOR_GLFW_INC_PREFIX)
+CFLAGS += -I$(VENDOR_LUA_PREFIX) -I$(VENDOR_GLAD_INC_PREFIX) -I$(VENDOR_GLFW_INC_PREFIX)
 
 # targets and object defs
 EH_E := eh
@@ -65,6 +69,9 @@ LUA_O  := lapi.o     lcode.o    ldebug.o   ldo.o      ldump.o    lfunc.o  lgc.o 
                                                                                     \
           lauxlib.o  lbaselib.o ldblib.o   liolib.o   lmathlib.o loslib.o ltablib.o \
 	      lstrlib.o  loadlib.o  linit.o
+
+GLAD_T := libglad.a
+GLAD_O := glad.o
 
 GLFW_T := libglfw.a
 GLFW_O := context.o init.o input.o monitor.o platform.o vulkan.o window.o                         \
@@ -128,8 +135,7 @@ endif
 
 ifeq ($(or $(BUILD_X11),$(BUILD_WAYLAND)),1)
     GLFW_O += xkb_unicode.o
-    UNAME := $(shell uname -s)
-	ifeq ($(UNAME),Linux)
+	ifeq ($(OS),Linux)
         GLFW_O += linux_joystick.o
 	else
         GLFW_O += posix_poll.o
@@ -138,15 +144,20 @@ endif
 
 # fix vendored paths
 LUA_T  := $(addprefix $(VENDOR_LUA_PREFIX),     $(LUA_T))
+GLAD_T := $(addprefix $(VENDOR_GLAD_SRC_PREFIX),$(GLAD_T))
 GLFW_T := $(addprefix $(VENDOR_GLFW_SRC_PREFIX),$(GLFW_T))
 LUA_O  := $(addprefix $(VENDOR_LUA_PREFIX),     $(LUA_O))
+GLAD_O := $(addprefix $(VENDOR_GLAD_SRC_PREFIX),$(GLAD_O))
 GLFW_O := $(addprefix $(VENDOR_GLFW_SRC_PREFIX),$(GLFW_O))
 
-ALL_O  := $(EH_O) $(LUA_O) $(GLFW_O)
-ALL_T  := $(EH_T) $(LUA_T) $(GLFW_T)
+ALL_O  := $(EH_O) $(LUA_O) $(GLAD_O) $(GLFW_O)
+ALL_T  := $(EH_T) $(LUA_T) $(GLAD_T) $(GLFW_T)
 ALL    := $(EH_E) $(ALL_T) $(ALL_O)
 
 $(EH_T): $(EH_O)
+	$(AR) $@ $^
+
+$(GLAD_T): $(GLAD_O)
 	$(AR) $@ $^
 
 $(GLFW_T): $(GLFW_O)
