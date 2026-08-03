@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,34 +16,30 @@
 #define EHL_CFUN(id) ehL_##id
 #define EHL_CDEF(id) static int32_t EHL_CFUN(id)(lua_State *L)
 
-// example API functions for the editor
-EHL_CDEF(editor_setfont) {
-    const char *font_id = lua_tostring(L, -1);
-    printf("[EH:CONFIG] Set editor font to %s\n", font_id);
+// API functions
+EHL_CDEF(commands_add) {
+    luaL_checktype(L, 1, LUA_TSTRING);
+    luaL_checktype(L, 2, LUA_TFUNCTION);
     EHL_VOID;
 }
 
-EHL_CDEF(terminal_setfont) {
-    const char *font_id = lua_tostring(L, -1);
-    printf("[EH:CONFIG] Set terminal font to %s\n", font_id);
+EHL_CDEF(commands_del) {
+    luaL_checktype(L, 1, LUA_TSTRING);
     EHL_VOID;
 }
 
-EHL_CDEF(keybinds_undo) {
-    const char *keybind = lua_tostring(L, -1);
-    printf("[EH:CONFIG] Set undo keybind to \"%s\"\n", keybind);
+EHL_CDEF(keymap_set) {
+    luaL_checktype(L, 1, LUA_TSTRING);
+    //luaL_checktype(L, 2, LUA_TFUNCTION); // TODO: allow commands by name too
     EHL_VOID;
 }
 
-EHL_CDEF(keybinds_redo) {
-    const char *keybind = lua_tostring(L, -1);
-    printf("[EH:CONFIG] Set redo keybind to \"%s\"\n", keybind);
+EHL_CDEF(keymap_del) {
+    luaL_checktype(L, 1, LUA_TSTRING);
     EHL_VOID;
 }
 
-EHL_CDEF(keybinds_showterm) {
-    const char *keybind = lua_tostring(L, -1);
-    printf("[EH:CONFIG] Set showterm keybind to \"%s\"\n", keybind);
+EHL_CDEF(console_toggle) {
     EHL_VOID;
 }
 
@@ -52,38 +49,66 @@ EHL_CDEF(keybinds_showterm) {
 
 static
 int32_t ehL_openapi(lua_State *L) {
-    assert(L != NULL);
-
-    // define table that acts as the namespace for the yoreh API functions
+    // the table that contains the eh API namespace
     lua_newtable(L);
-        // editor functions
+        // commands namespace
+        lua_pushstring(L, "commands");
+        lua_newtable(L);
+            lua_pushstring(L, "add");
+            lua_pushcfunction(L, EHL_CFUN(commands_add));
+            lua_settable(L, -3);
+            lua_pushstring(L, "del");
+            lua_pushcfunction(L, EHL_CFUN(commands_del));
+            lua_settable(L, -3);
+        lua_settable(L, -3);
+        // keymap namespace
+        lua_pushstring(L, "keymap");
+        lua_newtable(L);
+            lua_pushstring(L, "set");
+            lua_pushcfunction(L, EHL_CFUN(keymap_set));
+            lua_settable(L, -3);
+            lua_pushstring(L, "del");
+            lua_pushcfunction(L, EHL_CFUN(keymap_del));
+            lua_settable(L, -3);
+        lua_settable(L, -3);
+        // console namespace
+        lua_pushstring(L, "console");
+        lua_newtable(L);
+            lua_pushstring(L, "enabled");
+            lua_pushboolean(L, true);
+            lua_settable(L, -3);
+            lua_pushstring(L, "font");
+            lua_pushnil(L);
+            lua_settable(L, -3);
+            lua_pushstring(L, "color");
+            lua_pushinteger(L, 0xFFFFFF);
+            lua_settable(L, -3);
+            lua_pushstring(L, "shader");
+            lua_pushnil(L);
+            lua_settable(L, -3);
+            lua_pushstring(L, "toggle");
+            lua_pushcfunction(L, EHL_CFUN(console_toggle));
+            lua_settable(L, -3);
+        lua_settable(L, -3);
+        // editor namespace
         lua_pushstring(L, "editor");
         lua_newtable(L);
-            lua_pushstring(L, "setfont");
-            lua_pushcfunction(L, EHL_CFUN(editor_setfont));
+            lua_pushstring(L, "font");
+            lua_pushnil(L);
             lua_settable(L, -3);
-        lua_settable(L, -3);
-        // terminal functions
-        lua_pushstring(L, "terminal");
-        lua_newtable(L);
-            lua_pushstring(L, "setfont");
-            lua_pushcfunction(L, EHL_CFUN(terminal_setfont));
-            lua_settable(L, -3);
-        lua_settable(L, -3);
-        // keybinds functions
-        lua_pushstring(L, "keybinds");
-        lua_newtable(L);
-            lua_pushstring(L, "showterm");
-            lua_pushcfunction(L, EHL_CFUN(keybinds_showterm));
-            lua_settable(L, -3);
-            lua_pushstring(L, "undo");
-            lua_pushcfunction(L, EHL_CFUN(keybinds_undo));
-            lua_settable(L, -3);
-            lua_pushstring(L, "redo");
-            lua_pushcfunction(L, EHL_CFUN(keybinds_redo));
+            lua_pushstring(L, "cursor");
+            lua_newtable(L);
+                lua_pushstring(L, "x");
+                lua_pushinteger(L, 0);
+                lua_settable(L, -3);
+                lua_pushstring(L, "y");
+                lua_pushinteger(L, 0);
+                lua_settable(L, -3);
             lua_settable(L, -3);
         lua_settable(L, -3);
     lua_setglobal(L, "eh");
+
+    return 0;
 }
 
 static
