@@ -3,8 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 
-#include "GLFW/glfw3.h"
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/glad.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -137,22 +141,57 @@ void eh_GLFWerrorfun(int32_t error_code, const char *description) {
     printf("Eh-rror: %s (exit code: 0x%x)\n", description, error_code);
 }
 
+static
+void eh_GLFWkeycallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
+static
+void eh_GLFWwindowsizecallback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
 int32_t main(void) {
     printf("Yoreh-ditor!\n");
     lua_State *L = ehL_init();
 
     lua_close(L);
 
-    glfwSetErrorCallback(&eh_GLFWerrorfun);
+    glfwSetErrorCallback(eh_GLFWerrorfun);
     if (glfwInit() == GLFW_FALSE) {
         return EXIT_FAILURE;
     }
 
+    glfwDefaultWindowHints();
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    glfwWindowHint(GLFW_POSITION_X, (1920-640)/2);
-    glfwWindowHint(GLFW_POSITION_Y, (1080-480)/2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+
+    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    glfwWindowHint(GLFW_POSITION_X, (mode->width-640)/2);
+    glfwWindowHint(GLFW_POSITION_Y, (mode->height-480)/2);
+
     GLFWwindow* window = glfwCreateWindow(640, 480, "Yoreh-ditor", NULL, NULL);
+    glfwSetKeyCallback(window, eh_GLFWkeycallback);
+    glfwSetWindowSizeCallback(window, eh_GLFWwindowsizecallback);
+    glfwMakeContextCurrent(window);
+    gladLoadGL();
+    glfwSwapInterval(1);
+
     while (!glfwWindowShouldClose(window)) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(1, 1, 1, 1);
+
+        glColor3f(0.1, 0.2, 0.3);
+        glBegin(GL_QUADS);
+            glVertex2f(-1.0f, 1.0f);
+            glVertex2f(-1.0f, 0.0f);
+            glVertex2f(1.0f, 0.0f);
+            glVertex2f(1.0f, 1.0f);
+        glEnd();
+
         glfwWaitEvents(); // glfwPollEvents();
         glfwSwapBuffers(window);
     }
