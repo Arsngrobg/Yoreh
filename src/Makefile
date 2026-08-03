@@ -150,8 +150,8 @@ LUA_O  := $(addprefix $(VENDOR_LUA_PREFIX),     $(LUA_O))
 GLAD_O := $(addprefix $(VENDOR_GLAD_SRC_PREFIX),$(GLAD_O))
 GLFW_O := $(addprefix $(VENDOR_GLFW_SRC_PREFIX),$(GLFW_O))
 
-ALL_O  := $(EH_O) $(LUA_O) $(GLAD_O) $(GLFW_O)
-ALL_T  := $(EH_T) $(LUA_T) $(GLAD_T) $(GLFW_T)
+ALL_O  := $(EH_O) $(LUA_O) $(GLFW_O) $(GLAD_O)
+ALL_T  := $(EH_T) $(LUA_T) $(GLFW_T) $(GLAD_T)
 ALL    := $(EH_E) $(ALL_T) $(ALL_O)
 
 $(EH_T): $(EH_O)
