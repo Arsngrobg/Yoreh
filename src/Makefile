@@ -19,19 +19,31 @@ CFLAGS ?= -march=native -DNDEBUG
 #                          DO NOT EDIT PAST THIS POINT                           #
 # ============================================================================== #
 
+ifeq ($(OS),Windows_NT)
+    OS := Windows
+else
+    UNAME := $(shell uname -s)
+	ifeq ($(UNAME),Linux)
+        OS := Linux
+	endif
+	ifeq ($(UNAME),Darwin)
+        OS := Darwin
+	endif
+endif
+
 AR := ar rcs
 
 override \
 CFLAGS += -std=c99 -O2
 
 # vendor pathing
-VENDOR_LUA_PREFIX  := ../vendor/lua/
+VENDOR_LUA_PREFIX      := ../vendor/lua/
 VENDOR_GLFW_SRC_PREFIX := ../vendor/glfw/src/
 VENDOR_GLFW_INC_PREFIX := ../vendor/glfw/include/
-ifeq ($(OS),Windows_NT)
-VENDOR_LUA_PREFIX      := $(subst /,\,$(VENDOR_LUA_PREFIX))
-VENDOR_GLFW_SRC_PREFIX := $(subst /,\,$(VENDOR_GLFW_SRC_PREFIX))
-VENDOR_GLFW_INC_PREFIX := $(subst /,\,$(VENDOR_GLFW_INC_PREFIX))
+ifeq ($(OS),Windows)
+    VENDOR_LUA_PREFIX      := $(subst /,\,$(VENDOR_LUA_PREFIX))
+    VENDOR_GLFW_SRC_PREFIX := $(subst /,\,$(VENDOR_GLFW_SRC_PREFIX))
+    VENDOR_GLFW_INC_PREFIX := $(subst /,\,$(VENDOR_GLFW_INC_PREFIX))
 endif
 
 override \
@@ -39,7 +51,7 @@ CFLAGS += -I$(VENDOR_LUA_PREFIX) -I$(VENDOR_GLFW_INC_PREFIX)
 
 # targets and object defs
 EH_E := eh
-ifeq ($(OS),Windows_NT)
+ifeq ($(OS),Windows)
     EH_E := $(addsuffix .exe,$(EH_E))
 endif
 
@@ -59,27 +71,35 @@ GLFW_O := context.o init.o input.o monitor.o platform.o vulkan.o window.o       
           egl_context.o osmesa_context.o null_init.o null_monitor.o null_window.o null_joystick.o
 
 # glfw OS-dependent modules
-ifeq ($(OS),Windows_NT)
+ifeq ($(OS),Windows)
     LIBS   += -lgdi32 -luser32 -lkernel32 -lopengl32 -lshlwapi
     GLFW_O += win32_module.o win32_time.o win32_thread.o
-else
-    UNAME := $(shell uname -s)
-    ifeq ($(UNAME),Linux)
-        LIBS   += -lGL -lm -pthread -ldl
-        GLFW_O += posix_module.o posix_time.o posix_thread.o
-    endif
-    ifeq ($(UNAME),Darwin)
-        LIBS   += -framework Cocoa -framework IOKit -framework CoreVideo -framework OpenGL
-        GLFW_O += posix_module.o cocoa_time.o posix_thread.o
-    endif
+endif
+ifeq ($(OS),Linux)
+    LIBS   += -lGL -lm -pthread -ldl
+    GLFW_O += posix_module.o posix_time.o posix_thread.o
+endif
+ifeq ($(OS),Darwin)
+    LIBS   += -framework Cocoa -framework IOKit -framework CoreVideo -framework OpenGL
+    GLFW_O += posix_module.o cocoa_time.o posix_thread.o
 endif
 
-# force build system to include every possible object file when 'clean' recipe is used
-ifneq ($(filter clean,$(MAKECMDGOALS)),)
-    BUILD_COCOA   := 1
-    BUILD_WIN32   := 1
-    BUILD_WAYLAND := 1
-    BUILD_X11     := 1
+# apply default build targets if none are provided
+ifneq ($(and $(BUILD_COCOA),$(BUILD_WIN32),$(BUILD_WAYLAND),$(BUILD_X11)),1)
+    ifeq ($(OS),Windows)
+        override \
+        BUILD_WIN32 := 1
+	endif
+	ifeq ($(OS),Linux)
+        override \
+        BUILD_X11     := 1
+        override \
+        BUILD_WAYLAND := 1
+	endif
+	ifeq ($(OS),Darwin)
+        override \
+        BUILD_COCOA   := 1
+	endif
 endif
 
 ifeq ($(BUILD_COCOA),1)
@@ -149,7 +169,7 @@ eh-devel: $(ALL_T)
 	$(CC) $(ALL_T) -o $(EH_E) $(LIBS)
 
 clean:
-ifeq ($(OS),Windows_NT)
+ifeq ($(OS),Windows)
 	del $(ALL) 2>nul
 else
 	rm $(ALL)
