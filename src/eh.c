@@ -1,9 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <math.h>
 
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/glad.h>
@@ -13,6 +10,39 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
+#define EH_KEYBIND_MAXKEYS (15)
+
+// keybind data
+typedef struct {
+    int32_t keys[EH_KEYBIND_MAXKEYS+1]; // keycodes
+    int32_t mods;                       // any modifier keys (bitmask)
+    int32_t regid;                      // ID of the lua callback function
+} eh_Keybind;
+
+// app data
+typedef struct {
+    GLFWwindow *win;      // window
+    lua_State  *L;        // lua vm
+    eh_Keybind *keybinds; // keybind data
+} eh_State;
+
+// CALLBACKS
+static
+void eh_GLFWerrorfun(int32_t error_code, const char *description) {
+    fprintf(stderr, "[EH] (FAILURE): %s (exit code: 0x%x)\n", description, error_code);
+}
+
+static
+void eh_GLFWkeycallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+}
+
+static
+void eh_GLFWwindowsizecallback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+// LUA API
 // some ease-of-use macros
 #define EHL_RETURN(n) return (n)
 #define EHL_VOID      EHL_RETURN(0)
@@ -49,7 +79,7 @@ EHL_CDEF(console_toggle) {
 
 // https://www.lua.org/manual/5.1/manual.html#3
 // https://www.codingwiththomas.com/blog/a-lua-c-api-cheat-sheet
-#define EHL_INIT "./config/init.lua"
+#define EH_INIT_LUA "./config/init.lua"
 
 static
 int32_t ehL_openapi(lua_State *L) {
@@ -112,91 +142,89 @@ int32_t ehL_openapi(lua_State *L) {
         lua_settable(L, -3);
     lua_setglobal(L, "eh");
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
+// STATE MANAGEMENT
 static
-lua_State *ehL_init(void) {
-    lua_State *L = luaL_newstate();
-    if (L == NULL) {
-        fprintf(stderr, "[EH] Unable to initialize Lua context");
-        return NULL;
-    }
-
-    luaopen_base(L);
-    luaopen_math(L);
-    ehL_openapi(L);
-
-    if (luaL_dofile(L, EHL_INIT) == 0) {
-        printf("[EH] Executed "EHL_INIT"\n");
-    } else {
-        luaL_error(L, "Error: %s", lua_tostring(L, -1));
-    }
-
-    return L;
-}
-
-static
-void eh_GLFWerrorfun(int32_t error_code, const char *description) {
-    printf("Eh-rror: %s (exit code: 0x%x)\n", description, error_code);
-}
-
-static
-void eh_GLFWkeycallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
-
-static
-void eh_GLFWwindowsizecallback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
-
-int32_t main(void) {
-    printf("Yoreh-ditor!\n");
-    lua_State *L = ehL_init();
-
-    lua_close(L);
-
+int32_t eh_start(eh_State *eh) {
+    // glfw
     glfwSetErrorCallback(eh_GLFWerrorfun);
     if (glfwInit() == GLFW_FALSE) {
         return EXIT_FAILURE;
     }
 
+    const GLFWvidmode *vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     glfwDefaultWindowHints();
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE,        GLFW_OPENGL_COMPAT_PROFILE);
+    //glfwWindowHint(GLFW_DECORATED,             GLFW_FALSE);
+    glfwWindowHint(GLFW_POSITION_X,            vidmode->width/4);
+    glfwWindowHint(GLFW_POSITION_Y,            vidmode->height/4);
 
-    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    glfwWindowHint(GLFW_POSITION_X, (mode->width-640)/2);
-    glfwWindowHint(GLFW_POSITION_Y, (mode->height-480)/2);
+    eh->win = glfwCreateWindow(vidmode->width/2, vidmode->height/2, "Yoreh", NULL, NULL);
+    if (eh->win == NULL) {
+        return EXIT_FAILURE;
+    }
 
-    GLFWwindow* window = glfwCreateWindow(640, 480, "Yoreh-ditor", NULL, NULL);
-    glfwSetKeyCallback(window, eh_GLFWkeycallback);
-    glfwSetWindowSizeCallback(window, eh_GLFWwindowsizecallback);
-    glfwMakeContextCurrent(window);
+    glfwSetKeyCallback       (eh->win, eh_GLFWkeycallback);
+    glfwSetWindowSizeCallback(eh->win, eh_GLFWwindowsizecallback);
+
+    glfwMakeContextCurrent(eh->win);
     gladLoadGL();
     glfwSwapInterval(1);
 
-    while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(1, 1, 1, 1);
-
-        glColor3f(0.1, 0.2, 0.3);
-        glBegin(GL_QUADS);
-            glVertex2f(-1.0f, 1.0f);
-            glVertex2f(-1.0f, 0.0f);
-            glVertex2f(1.0f, 0.0f);
-            glVertex2f(1.0f, 1.0f);
-        glEnd();
-
-        glfwWaitEvents(); // glfwPollEvents();
-        glfwSwapBuffers(window);
+    // lua
+    eh->L = luaL_newstate();
+    if (eh->L == NULL) {
+        fprintf(stderr, "[EH] (FAILURE): Unable to initialize Lua backend\n");
+        return EXIT_FAILURE;
     }
 
-    glfwDestroyWindow(window);
+    luaopen_base(eh->L);
+    luaopen_math(eh->L);
+    ehL_openapi (eh->L);
+
+    if (luaL_dofile(eh->L, EH_INIT_LUA) == 0) {
+        printf("[EH] Executed "EH_INIT_LUA"\n");
+    } else {
+        fprintf(stderr, "[EH] (FAILURE) %s\n", lua_tostring(eh->L, -1));
+        lua_pop(eh->L, 1);
+    }
+
+    return EXIT_SUCCESS;
+}
+
+static
+int32_t eh_run(eh_State *eh) {
+    while (!glfwWindowShouldClose(eh->win)) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.12, 0.12, 0.12, 1.00);
+
+        glColor3f(0.05, 0.05, 0.05);
+        glBegin(GL_QUADS);
+            glVertex2f(-0.99,  0.98);
+            glVertex2f(-0.99, -0.98);
+            glVertex2f( 0.99, -0.98);
+            glVertex2f( 0.99,  0.98);
+        glEnd();
+
+        glfwSwapBuffers(eh->win);
+        glfwWaitEvents(); // glfwPollEvents();
+    }
+
+    return EXIT_SUCCESS;
+}
+
+static
+int32_t eh_destroy(eh_State *eh) {
+    glfwDestroyWindow(eh->win);
     glfwTerminate();
     return EXIT_SUCCESS;
+}
+
+int32_t main(void) {
+    eh_State eh = {0};
+    return !eh_start(&eh) && !eh_run(&eh) && !eh_destroy(&eh);
 }
